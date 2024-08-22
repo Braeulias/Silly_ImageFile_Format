@@ -6,27 +6,35 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use std::io::Error;
 use std::path::PathBuf;
-use image::{GenericImageView, ImageBuffer, Pixel, RgbaImage, DynamicImage, Rgba};
+use image::{GenericImageView, Pixel};
 use eframe::{egui, Frame, App};
-use eframe::egui::{ColorImage, Context, Image, TextureOptions};
-use skia_safe::{op, AlphaType, Color4f, ColorType, ImageInfo, Paint, Rect, Surface};
-use css_color_parser::Color as CssColor;
-use eframe::egui::debug_text::print;
+use eframe::egui::{ColorImage, Context, IconData, TextureOptions, ViewportBuilder};
+use skia_safe::{AlphaType, ColorType};
 
-struct MyApp {              //App used for Eframe
+
+struct MyApp {
     color_image: Option<ColorImage>,
     texture_handle: Option<egui::TextureHandle>,
+    width: usize,
+    height: usize,
 }
 
 impl MyApp {
-    fn new(path_buf: PathBuf) -> Self {     //easily create new Eframe
-        let color_image = silly_to_egui_image(path_buf).ok();
+    fn new(path_buf: PathBuf) -> Self {
+        let color_image = silly_to_egui_image(path_buf.clone()).ok();
+        let (width, height) = color_image.as_ref()
+            .map(|img| (img.size[0], img.size[1]))
+            .unwrap_or((0, 0));
+
         MyApp {
             color_image,
             texture_handle: None,
+            width,
+            height,
         }
     }
 }
+
 
 impl App for MyApp {
     //set img
@@ -42,7 +50,6 @@ impl App for MyApp {
                 }
 
                 if let Some(texture_handle) = &self.texture_handle {
-                    let image_size = texture_handle.size_vec2();
                     ui.image(texture_handle);
                 }
             }
@@ -82,17 +89,29 @@ fn main() {
         }
     } else {
         let path_buf = PathBuf::from(&args[1]);
+        let app = MyApp::new(path_buf.clone());
 
-        if let file_name = path_buf.clone().file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or("My egui App") {
-                let options = eframe::NativeOptions::default();
-                eframe::run_native(
-                    file_name,
-                    options,
-                    Box::new(|_cc| Ok(Box::new(MyApp::new(path_buf)))),
-                );
-            }
+        if let file_name = path_buf.clone().file_stem().and_then(|s| s.to_str()).unwrap_or("My egui App") {
+
+            let viewport= ViewportBuilder::default()
+                .with_title(file_name)
+                .with_inner_size((app.width as f32, app.height as f32))
+                .with_resizable(false);
+
+
+
+            let options = eframe::NativeOptions {
+                viewport,
+                ..Default::default()
+            };
+
+
+            eframe::run_native(
+                file_name,
+                options,
+                Box::new(|_cc| Ok(Box::new(app))),
+            );
+        }
 
 
     }
