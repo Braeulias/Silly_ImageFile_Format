@@ -117,14 +117,18 @@ fn main() {
             .and_then(|s| s.to_str())
             .unwrap_or("My egui App");
 
-
+        // Set the desired initial window size (e.g., 800x800)
+        let initial_window_size = Vec2::new(1000.0, 800.0);
 
         let options = eframe::NativeOptions {
+            viewport: ViewportBuilder::default()
+                .with_inner_size(initial_window_size),
             ..Default::default()
         };
 
         eframe::run_native(file_name, options, Box::new(|_cc| Ok(Box::new(app))))
-            .expect("Couldnt run EFRAME");
+            .expect("Could not run EFRAME");
+
     }
 
 }
