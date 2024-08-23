@@ -1,6 +1,6 @@
 extern crate image;
 
-use eframe::egui::{ColorImage, Context, TextureOptions, ViewportBuilder};
+use eframe::egui::{ColorImage, Context, ScrollArea, TextureOptions, Vec2, ViewportBuilder};
 use eframe::{egui, App, Frame};
 use image::{GenericImageView, Pixel};
 use skia_safe::{AlphaType, ColorType};
@@ -15,6 +15,7 @@ struct MyApp {
     //The EGUI App
     color_image: Option<ColorImage>,
     texture_handle: Option<egui::TextureHandle>,
+    zoom: f32,
     width: usize,
     height: usize,
 }
@@ -31,6 +32,7 @@ impl MyApp {
         MyApp {
             color_image,
             texture_handle: None,
+            zoom: 1.0,
             width,
             height,
         }
@@ -52,7 +54,26 @@ impl App for MyApp {
                 }
 
                 if let Some(texture_handle) = &self.texture_handle {
-                    ui.image(texture_handle);
+                    // Capture input and apply zoom
+                    ctx.input(|i| {
+                        if i.zoom_delta() != 1.0 {
+                            self.zoom *= i.zoom_delta();
+                        }
+                    });
+
+                    // Display the image within a scrollable area
+                    ScrollArea::both().show(ui, |ui| {
+                        // Set the image size based on the zoom level
+                        let image_size = Vec2::new(
+                            self.width as f32 * self.zoom,
+                            self.height as f32 * self.zoom,
+                        );
+
+                        let image_widget = egui::Image::new(texture_handle)
+                            .fit_to_exact_size(image_size);
+
+                        ui.add(image_widget);
+                    });
                 }
             }
         });
@@ -96,19 +117,15 @@ fn main() {
             .and_then(|s| s.to_str())
             .unwrap_or("My egui App");
 
-            let viewport = ViewportBuilder::default()
-                .with_title(file_name)
-                .with_inner_size((app.width as f32, app.height as f32))
-                .with_resizable(false);
 
-            let options = eframe::NativeOptions {
-                viewport,
-                ..Default::default()
-            };
 
-            eframe::run_native(file_name, options, Box::new(|_cc| Ok(Box::new(app))))
-                .expect("Couldnt run EFRAME");
-        }
+        let options = eframe::NativeOptions {
+            ..Default::default()
+        };
+
+        eframe::run_native(file_name, options, Box::new(|_cc| Ok(Box::new(app))))
+            .expect("Couldnt run EFRAME");
+    }
 
 }
 
