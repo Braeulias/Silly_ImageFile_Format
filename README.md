@@ -22,7 +22,7 @@ Before setting up the project, ensure that you have the following installed on y
 1. **Clone the Repository:**
 
    ```sh
-   git clone https://github.com/your-username/img-file-format.git
+   git clone https://github.com/Braeulias/Silly_ImageFile_Forma.git
    cd img-file-format
    ```
 
